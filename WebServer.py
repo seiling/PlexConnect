@@ -12,14 +12,14 @@ import sys
 import string, cgi, time
 from os import sep
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-from multiprocessing import Pipe  # inter process communication
+import Queue  # inter process communication
 
 try:
     import xml.etree.cElementTree as etree
 except ImportError:
     import xml.etree.ElementTree as etree
 
-import Settings, ATVSettings
+import ATVSettings
 from Debug import *  # dprint()
 import XMLConverter  # XML_PMS2aTV, XML_PlayVideo
 
@@ -170,14 +170,14 @@ class MyHandler(BaseHTTPRequestHandler):
 def Run(cmdPipe, param):
     dinit(__name__, param)  # init logging, WebServer process
     
-    cfg_IP_WebServer = param['CSettings'].getSetting('ip_webserver')
-    cfg_Port_WebServer = param['CSettings'].getSetting('port_webserver')
+    #Protocol     = "HTTP/1.0"
+    # todo: IP, port
     try:
-        server = HTTPServer((cfg_IP_WebServer,int(cfg_Port_WebServer)), MyHandler)
+        server = HTTPServer((param['IP_WebServer'],int(param['Port_WebServer'])), MyHandler)
         server.timeout = 1
         sa = server.socket.getsockname()
     except Exception, e:
-        dprint(__name__, 0, "Failed to connect to HTTP on {0} port {1}: {2}", cfg_IP_WebServer, cfg_Port_WebServer, e)
+        dprint(__name__, 0, "Failed to connect to HTTP on {0} port {1}: {2}", param['IP_WebServer'], param['Port_WebServer'], e)
         sys.exit(1)
         
     dprint(__name__, 0, "***")
@@ -211,10 +211,10 @@ def Run(cmdPipe, param):
 
 
 if __name__=="__main__":
-    cmdPipe = Pipe()
+    cmd = Queue.Queue()
     
-    cfg = Settings.CSettings()
     param = {}
-    param['CSettings'] = cfg
+    param['IP_WebServer'] = '0.0.0.0'
+    param['Port_WebServer'] = '80'
     
-    Run(cmdPipe[1], param)
+    Run(cmd, param)
